@@ -40,7 +40,7 @@ describe('Load config', () => {
     try {
       await writeFile(configPath, '{"baz": 3}');
       await loadConfig(hexo);
-      hexo.config.baz.should.eql(3);
+      hexo.config.should.eql(defaultConfig);
     } finally {
       await unlink(configPath);
     }
@@ -79,8 +79,8 @@ describe('Load config', () => {
     try {
       await writeFile(realPath, '{"foo": 2}');
       await loadConfig(hexo);
-      hexo.config.foo.should.eql(2);
-      hexo.config_path.should.eql(realPath);
+      hexo.config.should.eql(defaultConfig);
+      hexo.config_path.should.not.eql(realPath);
     } finally {
       hexo.config_path = join(hexo.base_dir, '_config.yml');
       await unlink(realPath);
