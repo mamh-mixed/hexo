@@ -1,8 +1,8 @@
-import { sep, resolve, join } from 'path';
+import { sep, resolve, join, parse } from 'path';
 import tildify from 'tildify';
 import Theme from '../theme';
 import Source from './source';
-import { exists } from 'hexo-fs';
+import { exists, readdir } from 'hexo-fs';
 import { magenta } from 'picocolors';
 import { deepMerge } from 'hexo-util';
 import validateConfig from './validate_config';
@@ -12,12 +12,13 @@ export = async (ctx: Hexo): Promise<void> => {
   if (!ctx.env.init) return;
 
   const baseDir = ctx.base_dir;
-  const configPath = ctx.config_path;
+  let configPath = ctx.config_path;
 
-  const configExists = await exists(configPath);
-  if (!configExists) return;
+  const path = await exists(configPath) ? configPath : await findConfigPath(configPath);
+  if (!path) return;
+  configPath = path;
 
-  let config = await ctx.render.render({ path: configPath });
+  let config = await ctx.render.render({ path });
   if (!config || typeof config !== 'object') return;
 
   ctx.log.debug('Config loaded: %s', magenta(tildify(configPath)));
@@ -63,3 +64,11 @@ export = async (ctx: Hexo): Promise<void> => {
   ctx.theme_script_dir = join(ctx.theme_dir, 'scripts') + sep;
   ctx.theme = new Theme(ctx, { ignored });
 };
+
+async function findConfigPath(path: string): Promise<string> {
+  const { dir, name } = parse(path);
+
+  const files = await readdir(dir);
+  const item = files.find(item => item === name + '.json');
+  if (item != null) return join(dir, item);
+}
